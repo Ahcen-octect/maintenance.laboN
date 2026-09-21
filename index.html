@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>LaboNedjma · Maintenance</title>
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="icon" href="icon-192.png">
+<meta name="theme-color" content="#0B1930">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jsqr/1.4.0/jsQR.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+:root{
+  --ink:#0B1930; --panel:#122844; --panel2:#0E2038; --steel:#33547A; --steel-lo:#1B3253;
+  --amber:#F2A93B; --green:#4FBA6F; --red:#E2574C; --text:#E8EDF3; --sub:#9CB1CB;
+  font-family:'IBM Plex Sans',system-ui,sans-serif;
+  padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+  box-sizing:border-box;
+}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0;background:var(--ink);color:var(--text);overscroll-behavior-y:none}
+body{display:flex;flex-direction:column;font-size:15px}
+.mono{font-family:'IBM Plex Mono',monospace}
+header{padding:16px 18px 12px;border-bottom:1px solid var(--steel-lo);position:sticky;top:0;background:var(--ink);z-index:5}
+header .brand{display:flex;align-items:baseline;gap:8px}
+header h1{font-size:18px;margin:0;font-weight:700;letter-spacing:.2px}
+header .tag{color:var(--amber);font-size:11px;font-family:'IBM Plex Mono',monospace}
+main{flex:1;overflow-y:auto;padding:16px 16px 90px;max-width:640px;width:100%;margin:0 auto}
+.panel{background:var(--panel);border:1px solid var(--steel-lo);padding:14px 16px;margin-bottom:12px;position:relative}
+.panel::before{content:"";position:absolute;top:-1px;left:-1px;width:10px;height:10px;border-top:2px solid var(--amber);border-left:2px solid var(--amber)}
+h2{font-size:13px;text-transform:uppercase;letter-spacing:1px;color:var(--sub);margin:0 0 12px;font-family:'IBM Plex Mono',monospace;font-weight:600}
+label{display:block;font-size:12px;color:var(--sub);margin:10px 0 4px}
+input,select,textarea{width:100%;background:var(--panel2);border:1px solid var(--steel);color:var(--text);padding:10px;font-size:14px;font-family:inherit}
+textarea{min-height:64px;resize:vertical}
+select{appearance:none}
+.row{display:flex;gap:8px}
+.row>*{flex:1}
+button{cursor:pointer;font-family:inherit}
+.btn{background:var(--amber);color:#1a1204;border:none;padding:12px 16px;font-weight:600;font-size:14px;width:100%}
+.btn:active{opacity:.85}
+.btn.ghost{background:transparent;border:1px solid var(--steel);color:var(--text)}
+.btn.sm{padding:8px 12px;font-size:13px;width:auto}
+.chip-row{display:flex;gap:6px;flex-wrap:wrap}
+.chip{border:1px solid var(--steel);padding:6px 12px;font-size:13px;color:var(--sub);cursor:pointer}
+.chip.active{background:var(--amber);color:#1a1204;border-color:var(--amber);font-weight:600}
+.sev-Normale{color:var(--green)} .sev-Urgente{color:var(--amber)} .sev-Critique{color:var(--red)}
+.dot{width:8px;height:8px;border-radius:50%;display:inline-block;margin-right:6px}
+.dot-Normale{background:var(--green)} .dot-Urgente{background:var(--amber)} .dot-Critique{background:var(--red)}
+.item{border-bottom:1px solid var(--steel-lo);padding:10px 0;display:flex;justify-content:space-between;gap:10px}
+.item:last-child{border-bottom:none}
+.item .meta{font-size:12px;color:var(--sub);margin-top:2px}
+.item .r{text-align:right;font-size:12px;color:var(--sub)}
+.empty{color:var(--sub);font-size:13px;text-align:center;padding:24px 0}
+#scanbox{width:100%;background:#000;position:relative;border:1px solid var(--steel);aspect-ratio:1}
+#scanbox video{width:100%;height:100%;object-fit:cover}
+#scanbox .frame{position:absolute;inset:20%;border:2px solid var(--amber);pointer-events:none}
+.machinecard{border:1px solid var(--steel-lo);padding:10px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center}
+.machinecard .name{font-weight:600} .machinecard .type{font-size:12px;color:var(--sub);font-family:'IBM Plex Mono',monospace}
+.qrgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.qrcell{border:1px solid var(--steel-lo);padding:10px;text-align:center}
+.qrcell canvas,.qrcell img{margin:0 auto}
+.bar{height:8px;background:var(--steel-lo);margin-top:4px;overflow:hidden}
+.bar>span{display:block;height:100%;background:var(--amber)}
+.statrow{margin-bottom:10px}
+.statrow .lbl{display:flex;justify-content:space-between;font-size:13px}
+nav{position:fixed;bottom:0;left:0;right:0;background:var(--panel);border-top:1px solid var(--steel-lo);display:flex;padding-bottom:env(safe-area-inset-bottom,0px);z-index:5}
+nav button{flex:1;background:none;border:none;color:var(--sub);font-size:10px;padding:10px 2px 8px;display:flex;flex-direction:column;align-items:center;gap:3px}
+nav button.active{color:var(--amber)}
+nav .ic{font-size:18px}
+.banner{background:var(--green);color:#06230f;padding:10px 14px;font-size:13px;font-weight:600;position:fixed;top:8px;left:50%;transform:translateX(-50%);z-index:20;display:none}
+select#f-machine option{color:#000}
+.hide{display:none!important}
+::-webkit-scrollbar{width:0}
+</style>
+</head>
+<body>
+<div class="banner" id="banner">✅ Fiche enregistrée</div>
+<header>
+  <div class="brand"><h1>LaboNedjma</h1><span class="tag">MAINTENANCE</span></div>
+</header>
+<main id="main"></main>
+<nav>
+  <button data-tab="scan" class="active"><span class="ic">◎</span>Scanner</button>
+  <button data-tab="saisie"><span class="ic">▤</span>Saisie</button>
+  <button data-tab="hist"><span class="ic">≡</span>Historique</button>
+  <button data-tab="mach"><span class="ic">⚙</span>Machines</button>
+  <button data-tab="stats"><span class="ic">▦</span>Stats</button>
+</nav>
+<script>
+const LS_M='ln_machines', LS_I='ln_interventions';
+const load=(k,d)=>{try{return JSON.parse(localStorage.getItem(k))||d}catch(e){return d}};
+const save=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}};
+let machines=load(LS_M,[]);
+let interventions=load(LS_I,[]);
+let selectedMachine=null, currentTab='scan', stream=null, scanning=false, filterType='Tout';
+
+function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,6)}
+function fmtDate(iso){const d=new Date(iso);return d.toLocaleDateString('fr-FR')+' '+d.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'})}
+function showBanner(msg){const b=document.getElementById('banner');b.textContent=msg;b.style.display='block';setTimeout(()=>b.style.display='none',1800)}
+
+function render(){document.getElementById('main').innerHTML=views[currentTab]();bind()}
+
+const views={
+ scan(){
+  return `<div class="panel"><h2>Scanner un QR code</h2>
+   <div id="scanbox" class="${scanning?'':'hide'}"><video id="video" playsinline></video><div class="frame"></div></div>
+   <button class="btn ${scanning?'hide':''}" id="startScan">◎ Activer le scan QR</button>
+   <button class="btn ghost ${scanning?'':'hide'}" id="stopScan" style="margin-top:8px">Arrêter</button>
+   </div>
+   <div class="panel"><h2>Ou sélectionnez la machine</h2>
+   <select id="manualSelect"><option value="">— Choisir —</option>
+   ${machines.map(m=>`<option value="${m.id}">${m.nom} (${m.type})</option>`).join('')}</select>
+   </div>
+   <div class="panel"><h2>Machine active</h2>
+   ${selectedMachine?`<div class="machinecard"><div><div class="name">${mByI(selectedMachine).nom}</div><div class="type mono">${mByI(selectedMachine).type}</div></div><span style="color:var(--green)">●</span></div>`:'<div class="empty">Aucune machine sélectionnée</div>'}
+   </div>`;
+ },
+ saisie(){
+  if(!machines.length) return `<div class="panel"><div class="empty">Ajoute d'abord une machine dans l'onglet Machines.</div></div>`;
+  return `<div class="panel"><h2>Fiche d'intervention</h2>
+   <label>Machine</label>
+   <select id="f-machine">${machines.map(m=>`<option value="${m.id}" ${m.id===selectedMachine?'selected':''}>${m.nom} (${m.type})</option>`).join('')}</select>
+   <label>Type d'intervention</label>
+   <div class="chip-row" id="f-type">${['Maintenance','Panne','Changement PDR','Réglage'].map((t,i)=>`<span class="chip ${i===0?'active':''}" data-v="${t}">${t}</span>`).join('')}</div>
+   <label>Technicien</label><input id="f-tech" placeholder="Nom du technicien" value="${localStorage.getItem('ln_tech')||''}">
+   <label>Description</label><textarea id="f-desc" placeholder="Détails de l'intervention"></textarea>
+   <label>Référence PDR changée (optionnel)</label><input id="f-pdr" placeholder="Réf. pièce">
+   <div class="row">
+   <div><label>Durée (min)</label><input id="f-dur" type="number" min="0" placeholder="0"></div>
+   <div><label>Gravité</label><select id="f-grav"><option>Normale</option><option>Urgente</option><option>Critique</option></select></div>
+   </div>
+   <button class="btn" id="saveForm" style="margin-top:14px">💾 Enregistrer la fiche</button>
+   </div>`;
+ },
+ hist(){
+  const types=['Tout','Maintenance','Panne','Changement PDR','Réglage'];
+  const list=interventions.filter(iv=>filterType==='Tout'||iv.type===filterType).sort((a,b)=>b.date.localeCompare(a.date));
+  return `<div class="panel"><div class="chip-row">${types.map(t=>`<span class="chip ${filterType===t?'active':''}" data-ft="${t}">${t}</span>`).join('')}</div></div>
+   <div class="panel"><h2>Interventions (${list.length})</h2>
+   ${list.length?list.map(iv=>{const m=mById(iv.machineId);return `<div class="item"><div><div><span class="dot dot-${iv.gravite}"></span><b>${m?m.nom:'?'}</b> — ${iv.type}</div><div class="meta">${iv.technicien||'—'} · ${iv.duree||0} min${iv.pdr?' · PDR: '+iv.pdr:''}</div></div><div class="r">${fmtDate(iv.date)}</div></div>`}).join(''):'<div class="empty">Aucune fiche</div>'}
+   </div>`;
+ },
+ mach(){
+  return `<div class="panel"><h2>Ajouter une machine / un équipement</h2>
+   <label>Nom de la machine</label><input id="m-nom" placeholder="Ex: Autoclave 2">
+   <label>Type / équipement</label><input id="m-type" placeholder="Ex: Stérilisation">
+   <label>Emplacement (optionnel)</label><input id="m-lieu" placeholder="Ex: Salle 3">
+   <button class="btn" id="addMachine" style="margin-top:12px">+ Ajouter la machine</button>
+   </div>
+   <div class="panel"><h2>Machines enregistrées (${machines.length})</h2>
+   ${machines.length?machines.map(m=>`<div class="machinecard"><div><div class="name">${m.nom}</div><div class="type mono">${m.type}${m.lieu?' · '+m.lieu:''}</div></div><button class="btn ghost sm" data-del="${m.id}">✕</button></div>`).join(''):'<div class="empty">Aucune machine. Ajoute la première ci-dessus.</div>'}
+   </div>
+   <div class="panel"><h2>QR codes des machines</h2>
+   <p style="font-size:12px;color:var(--sub);margin:0 0 10px">Imprimez et collez sur chaque machine ; scannez-les depuis l'onglet Scanner.</p>
+   <div class="qrgrid" id="qrgrid"></div>
+   ${machines.length?`<button class="btn ghost sm" id="printQr" style="margin-top:10px">🖨️ Imprimer tous les QR codes</button>`:''}
+   </div>`;
+ },
+ stats(){
+  const byType={}, byMachine={}, byTech={};
+  interventions.forEach(iv=>{byType[iv.type]=(byType[iv.type]||0)+1; const m=mById(iv.machineId); const key=m?m.nom:'?'; byMachine[key]=(byMachine[key]||0)+1; if(iv.technicien) byTech[iv.technicien]=(byTech[iv.technicien]||0)+(iv.duree||0)});
+  const bars=(obj,suffix)=>{const max=Math.max(1,...Object.values(obj));return Object.entries(obj).sort((a,b)=>b[1]-a[1]).map(([k,v])=>`<div class="statrow"><div class="lbl"><span>${k}</span><span class="mono">${v}${suffix||''}</span></div><div class="bar"><span style="width:${v/max*100}%"></span></div></div>`).join('')||'<div class="empty">Aucune donnée</div>'};
+  return `<div class="panel"><h2>Interventions par type</h2>${bars(byType)}</div>
+   <div class="panel"><h2>Machines les plus sollicitées</h2>${bars(byMachine)}</div>
+   <div class="panel"><h2>Durée par technicien</h2>${bars(byTech,' min')}</div>
+   <div class="panel"><h2>Export des données</h2>
+   <button class="btn ghost" id="expXlsx" style="margin-bottom:8px">📊 Exporter vers Excel (.xlsx)</button>
+   <button class="btn ghost" id="expJson">📁 Sauvegarder (JSON)</button>
+   </div>`;
+ }
+};
+
+function mById(id){return machines.find(m=>m.id===id)}
+function mByI(id){return mById(id)||{nom:'?',type:'?'}}
+
+function bind(){
+ if(currentTab==='scan'){
+  document.getElementById('startScan').onclick=startScan;
+  const stopBtn=document.getElementById('stopScan'); if(stopBtn) stopBtn.onclick=stopScan;
+  document.getElementById('manualSelect').onchange=e=>{if(e.target.value){selectedMachine=e.target.value;currentTab='saisie';render()}};
+ }
+ if(currentTab==='saisie'){
+  document.querySelectorAll('#f-type .chip').forEach(c=>c.onclick=()=>{document.querySelectorAll('#f-type .chip').forEach(x=>x.classList.remove('active'));c.classList.add('active')});
+  document.getElementById('saveForm').onclick=saveForm;
+ }
+ if(currentTab==='hist'){
+  document.querySelectorAll('[data-ft]').forEach(c=>c.onclick=()=>{filterType=c.dataset.ft;render()});
+ }
+ if(currentTab==='mach'){
+  document.getElementById('addMachine').onclick=addMachine;
+  document.querySelectorAll('[data-del]').forEach(b=>b.onclick=()=>{machines=machines.filter(m=>m.id!==b.dataset.del);save(LS_M,machines);render()});
+  renderQr();
+  const pq=document.getElementById('printQr'); if(pq) pq.onclick=()=>window.print();
+ }
+ if(currentTab==='stats'){
+  document.getElementById('expXlsx').onclick=exportXlsx;
+  document.getElementById('expJson').onclick=exportJson;
+ }
+}
+
+function addMachine(){
+ const nom=document.getElementById('m-nom').value.trim();
+ const type=document.getElementById('m-type').value.trim();
+ const lieu=document.getElementById('m-lieu').value.trim();
+ if(!nom||!type){showBanner('⚠️ Nom et type requis');return}
+ machines.push({id:uid(),nom,type,lieu});
+ save(LS_M,machines);
+ showBanner('✅ Machine ajoutée');
+ render();
+}
+
+function renderQr(){
+ const grid=document.getElementById('qrgrid'); if(!grid) return;
+ grid.innerHTML=machines.map(m=>`<div class="qrcell"><div id="qr-${m.id}"></div><div class="mono" style="font-size:11px;margin-top:6px">${m.nom}</div></div>`).join('');
+ machines.forEach(m=>{try{new QRCode(document.getElementById('qr-'+m.id),{text:m.id,width:100,height:100,colorDark:'#0B1930',colorLight:'#ffffff'})}catch(e){}});
+}
+
+function saveForm(){
+ const machineId=document.getElementById('f-machine').value;
+ const type=document.querySelector('#f-type .active').dataset.v;
+ const technicien=document.getElementById('f-tech').value.trim();
+ const description=document.getElementById('f-desc').value.trim();
+ const pdr=document.getElementById('f-pdr').value.trim();
+ const duree=parseInt(document.getElementById('f-dur').value)||0;
+ const gravite=document.getElementById('f-grav').value;
+ interventions.push({id:uid(),machineId,type,technicien,description,pdr,duree,gravite,date:new Date().toISOString()});
+ save(LS_I,interventions);
+ if(technicien) localStorage.setItem('ln_tech',technicien);
+ selectedMachine=null;
+ showBanner('✅ Fiche enregistrée et synchronisée !');
+ currentTab='hist'; render();
+}
+
+async function startScan(){
+ scanning=true; render();
+ try{
+  stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'}});
+  const video=document.getElementById('video'); video.srcObject=stream; await video.play();
+  const canvas=document.createElement('canvas'); const ctx=canvas.getContext('2d');
+  const tick=()=>{
+   if(!scanning) return;
+   if(video.readyState===video.HAVE_ENOUGH_DATA){
+    canvas.width=video.videoWidth; canvas.height=video.videoHeight;
+    ctx.drawImage(video,0,0,canvas.width,canvas.height);
+    const img=ctx.getImageData(0,0,canvas.width,canvas.height);
+    const code=jsQR(img.data,img.width,img.height);
+    if(code && mById(code.data)){ selectedMachine=code.data; stopScan(); currentTab='saisie'; render(); return; }
+   }
+   requestAnimationFrame(tick);
+  };
+  requestAnimationFrame(tick);
+ }catch(e){ showBanner('⚠️ Caméra indisponible'); scanning=false; render(); }
+}
+function stopScan(){ scanning=false; if(stream){stream.getTracks().forEach(t=>t.stop()); stream=null} }
+
+async function exportXlsx(){
+ const rows=interventions.map(iv=>({Machine:mByI(iv.machineId).nom,Type:iv.type,Technicien:iv.technicien,Description:iv.description,PDR:iv.pdr,'Durée (min)':iv.duree,Gravité:iv.gravite,Date:fmtDate(iv.date)}));
+ const ws=XLSX.utils.json_to_sheet(rows); const wb=XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb,ws,'Interventions');
+ const out=XLSX.write(wb,{type:'array',bookType:'xlsx'});
+ await deliver(new Blob([out],{type:'application/octet-stream'}),'labonedjma_export.xlsx');
+}
+async function exportJson(){
+ const data=JSON.stringify({machines,interventions},null,2);
+ await deliver(new Blob([data],{type:'application/json'}),'labonedjma_sauvegarde.json');
+}
+async function deliver(blob,filename){
+ try{
+  const dl=await claude.use('downloads');
+  if(dl){ const buf=await blob.arrayBuffer(); await dl.save({filename,data:buf}); showBanner('✅ Fichier proposé au téléchargement'); return; }
+ }catch(e){}
+ const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download=filename; a.click(); URL.revokeObjectURL(url);
+}
+
+document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{
+ if(scanning) stopScan();
+ currentTab=b.dataset.tab;
+ document.querySelectorAll('nav button').forEach(x=>x.classList.remove('active'));
+ b.classList.add('active');
+ render();
+});
+render();
+if('serviceWorker' in navigator){ window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(()=>{})); }
+</script>
+</body>
+</html>
